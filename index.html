@@ -57,6 +57,19 @@ h1 span{background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-cl
 .not-found{text-align:center;padding:20px;color:#a0aec0;font-size:16px}
 .loading{text-align:center;padding:12px;color:#a0aec0}
 .status-bar{text-align:center;font-size:12px;color:#a0aec0;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0}
+.wordlist-section{display:none;animation:fadeIn .3s ease;margin-bottom:16px}
+.wordlist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wordlist-header .wl-title{font-size:16px;font-weight:600;color:#2d3748}
+.wordlist-header .wl-close{background:none;border:none;font-size:20px;color:#a0aec0;cursor:pointer;padding:2px 8px;border-radius:6px}
+.wordlist-header .wl-close:hover{background:#f7fafc;color:#4a5568}
+.letter-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.letter-tab{padding:5px 9px;border-radius:7px;font-size:13px;font-weight:600;background:#edf2f7;color:#4a5568;cursor:pointer;transition:all .12s;min-width:30px;text-align:center}
+.letter-tab:hover{background:#e2e8f0}
+.letter-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.wordlist-words{display:flex;flex-wrap:wrap;gap:5px;max-height:420px;overflow-y:auto;padding:4px 2px}
+.wordlist-word{padding:5px 10px;border-radius:7px;font-size:13px;background:#f7fafc;color:#4a5568;cursor:pointer;transition:all .12s;border:1px solid #e2e8f0}
+.wordlist-word:hover{background:#667eea;color:#fff;border-color:#667eea}
+.wordlist-count{font-size:13px;color:#a0aec0;margin-bottom:8px}
 @media(max-width:480px){#app{padding:20px 16px}h1{font-size:20px}.word-header .word{font-size:28px}.syllable-section .syllables{font-size:22px}.chinese-section .chinese-chars{font-size:22px}.audio-controls button{font-size:13px;padding:10px 6px}}
 </style>
 </head>
@@ -66,6 +79,16 @@ h1 span{background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-cl
   <div class="search-box">
     <input id="wordInput" type="text" placeholder="輸入英文單字..." autofocus>
     <button id="searchBtn">🔍 查詢</button>
+  </div>
+  <div style="margin-bottom:16px"><button id="showWordlistBtn" style="width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:14px;padding:12px;font-size:15px;cursor:pointer;font-weight:600">📚 瀏覽單字庫</button></div>
+  <div class="wordlist-section" id="wordlistSection">
+    <div class="wordlist-header">
+      <span class="wl-title">📚 單字庫</span>
+      <button class="wl-close" id="closeWordlistBtn">✕</button>
+    </div>
+    <div class="wordlist-count" id="wordlistCount"></div>
+    <div class="letter-tabs" id="letterTabs"></div>
+    <div class="wordlist-words" id="wordlistWords"></div>
   </div>
   <div id="result">
     <div class="word-header">
@@ -353,6 +376,51 @@ function renderHistory(){
   if(cb)cb.addEventListener('click',clearHistory);
 }
 renderHistory();
+
+let sortedWords=[],wordlistInitialized=false;
+function initWordlist(){
+  sortedWords=Object.keys(DICT).sort();
+  document.getElementById('wordlistCount').textContent='共 '+sortedWords.length+' 個單字';
+  renderLetterTabs();
+  wordlistInitialized=true;
+}
+function renderLetterTabs(){
+  const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const tabs=document.getElementById('letterTabs');
+  tabs.innerHTML=letters.map(l=>'<span class="letter-tab" data-letter="'+l+'">'+l+'</span>').join('');
+  tabs.querySelectorAll('.letter-tab').forEach(el=>{
+    el.addEventListener('click',()=>showWordsByLetter(el.dataset.letter));
+  });
+}
+function showWordsByLetter(letter){
+  document.querySelectorAll('.letter-tab').forEach(el=>el.classList.toggle('active',el.dataset.letter===letter));
+  const words=sortedWords.filter(w=>w.startsWith(letter.toLowerCase()));
+  const container=document.getElementById('wordlistWords');
+  if(words.length===0){
+    container.innerHTML='<span style="color:#a0aec0;font-size:14px">沒有以 '+letter+' 開頭的單字</span>';
+    return;
+  }
+  container.innerHTML=words.map(w=>'<span class="wordlist-word" data-word="'+w+'">'+w+'</span>').join('');
+  container.querySelectorAll('.wordlist-word').forEach(el=>{
+    el.addEventListener('click',()=>{
+      document.getElementById('wordInput').value=el.dataset.word;
+      lookup(el.dataset.word);
+      closeWordlist();
+    });
+  });
+}
+function openWordlist(){
+  if(!wordlistInitialized)initWordlist();
+  document.getElementById('wordlistSection').style.display='block';
+  document.getElementById('result').style.display='none';
+  document.getElementById('notFound').style.display='none';
+  showWordsByLetter('A');
+}
+function closeWordlist(){
+  document.getElementById('wordlistSection').style.display='none';
+}
+document.getElementById('showWordlistBtn').addEventListener('click',openWordlist);
+document.getElementById('closeWordlistBtn').addEventListener('click',closeWordlist);
 
 document.getElementById('wordInput').focus();
 </script>
