@@ -223,6 +223,7 @@ function syllToChinese(syllable){
   if(!cn){
     cn=SYL2CN[vowel]||vowel;
   }
+  if(onset.length>1&&onset[0]==='S')cn='絲'+cn;
   if(coda.length>0&&cn){
     const codaCn=coda.map(p=>CODA_CN[p]||'').filter(Boolean).join('');
     if(codaCn)cn+=codaCn;
